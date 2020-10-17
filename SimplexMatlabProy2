@@ -1,0 +1,63 @@
+clc
+%Matriz inicial Z = C ; inputs 
+c = [-1 3 -2]; 
+sa = [3 -1 2; -2 4 0; -4 3 8];
+b = [7; 12; 10]; 
+numVar = 3; % especificar el número de variables
+% ----------------------------------------------------
+% terminan los inputs 
+
+
+s = eye(size(sa,1)); 
+A = [sa s b];
+ceroz = zeros(1, size(A,2)); % cunado usamos (1, smt) smt nos da el número de columnas de la matriz
+Cs = (1: numVar);  % para hacer el renglon en la tabla simplex
+
+% Definimos la base 
+base = numVar + 1: 1: size(A,2)-1; 
+
+% Calculamos renglon ZiCi
+ZiCi = (Cs(base) * A) - Cs; 
+
+% Imprimir tabla 
+ZCi = [ZiCi; A];  % tabla simplex muy básica 
+tablaSimplex = array2table(ZCi);
+tablaSimplex.Properties.VariableNames(1: size(ZCi, 2)) = {'x_1','x_2','x_3','s_1','s_2','s_3','Sol'};
+
+% Encontrar la columna pivote y la posicion de la columna del pivote 
+if any(ZiCi < 0)
+    zc = ZiCi(1: end - 1); % recorremos el renglon ZiCi
+    [enterCol, colPivote] = min(zc); % da la posición de la columna pivote 
+else 
+    disp ('Ya se ha llegado a la solución óptima c:'); 
+end
+
+% Encuentra intersección
+sol = A(:, end); 
+columna = A(:, colPivote); % da todos los valores de la columna pivote
+
+if all(columna <= 0)
+    error('Todas las entradas son < = 0 en la columna pivote');
+else 
+    for i = 1: size(columna, 1)
+        if columna(i) > 0
+            interseccion = sol ./ columna; 
+        else 
+            interseccion(i) = inf; % Si el número de la col pivote o de Solucion no es positivo
+        end
+    end
+end
+
+% Encuentra el renglón pivote y la posición del pivote
+[minInterseccion, renPivote] = min(interseccion); 
+base(renPivote) = colPivote; 
+pivote = A(renPivote, colPivote); 
+
+% Actualiza tabla simplex FALTAAA A
+A (renPivote, :) = A(renPivote, :) ./ pivote ; % hacemos 1 el pivote dividiendo entre si mismo 
+for i = 1; size(A,1)
+    if i ~= renPivote
+        A(i, :) = A(i,:) - A(i, colPivote) .* A(renPivote, :);
+    end
+end
+ZiCi = ZiCi - ZiCi(colPivote) .* A(renPivote, :); 
